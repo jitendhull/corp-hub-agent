@@ -1,8 +1,10 @@
 name: release
 
+# Disabled workflow temporarily — uncomment trigger when ready for release automation
 on:
-  push:
-    tags: ["v*"]
+  workflow_dispatch:
+  # push:
+  #   tags: ["v*"]
 
 permissions:
   contents: write
