@@ -5,6 +5,7 @@ import platform
 from .base import Collector
 from .sysinfo import SysinfoCollector
 from .network import NetworkCollector
+from .metrics import MetricsCollector
 
 if platform.system() == "Windows":
     from .logs_windows import LogsWindowsCollector as LogsCollector
