@@ -80,20 +80,27 @@ async def _async_main(config: Config) -> int:
 
     if token is None:
         log.info("No token — registering with %s", config.backend_url)
-        try:
-            host_id, token = await asyncio.to_thread(register, config, config.token_path)
-            log.info("Registered. host_id=%s", host_id)
-        except Exception as e:
-            log.error("Registration failed: %s", e)
-            return 1
+        reg_host_id: str | None = None
+        reg_token: str | None = None
+        backoff = 2.0
+        while reg_token is None or reg_host_id is None:
+            try:
+                reg_host_id, reg_token = await asyncio.to_thread(register, config, config.token_path)
+                log.info("Registered. host_id=%s", reg_host_id)
+            except Exception as e:
+                log.error("Registration failed: %s. Retrying in %.1fs...", e, backoff)
+                await asyncio.sleep(backoff)
+                backoff = min(backoff * 2.0, 60.0)
+        host_id = reg_host_id
+        token = reg_token
     else:
-        # Host id not stored locally — derive from token by asking backend?
-        # v1: re-register (idempotent, backend returns same token).
         try:
-            host_id, token = await asyncio.to_thread(register, config, config.token_path)
+            reg_host_id, reg_token = await asyncio.to_thread(register, config, config.token_path)
+            host_id = reg_host_id
+            token = reg_token
         except Exception as e:
-            log.error("Re-register failed: %s", e)
-            return 1
+            log.warning("Re-register failed (%s), using existing token", e)
+            host_id = "unknown"
 
     runner = Runner(config, token, host_id)
 
