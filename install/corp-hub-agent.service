@@ -1,0 +1,23 @@
+[Unit]
+Description=Corp-Hub Agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/corp-hub-agent
+Restart=on-failure
+RestartSec=10
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadOnlyPaths=/usr /etc
+# Agent needs /proc (network conns), /var/log (tail), journald
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+# Do NOT restrict paths — agent reads /proc, /var/log, journal socket
+
+[Install]
+WantedBy=multi-user.target

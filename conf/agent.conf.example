@@ -1,0 +1,24 @@
+# Corp-Hub Agent config
+# Copy to /etc/corp-hub-agent/agent.conf and edit.
+
+# Required: Corp-Hub backend base URL (no trailing slash).
+# LAN: http://192.168.1.10:8000
+# Tailscale: http://<tailnet-name>:8000
+backend_url = "http://192.168.1.10:8000"
+
+# Advertised pull endpoint (reserved for future v2; not used in push-only v1).
+listen_host = "0.0.0.0"
+listen_port = 9500
+
+[collectors]
+sysinfo_interval_seconds = 300
+network_interval_seconds = 60
+logs_interval_seconds = 60
+
+[logs]
+# journald (systemd) + file tail. Remove "journald" if systemd python pkg absent.
+sources = ["journald", "syslog", "auth.log"]
+syslog_path = "/var/log/syslog"
+auth_log_path = "/var/log/auth.log"
+max_lines_per_push = 500
+max_backlog = 5000
