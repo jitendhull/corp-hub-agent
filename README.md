@@ -22,8 +22,8 @@ host ── POST /api/agents/{id}/logs    ──► backend (every 1m)
 ## Install (Linux)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/<ORG>/corp-hub-agent/main/install/install.sh | \
-  sudo bash -s -- --backend-url http://<BACKEND_IP>:8000
+curl -fsSL https://raw.githubusercontent.com/jitendhull/corp-hub-agent/main/install/install.sh | \
+  sudo bash -s -- --backend-url http://hermes:8000
 ```
 
 Creates `/usr/local/bin/corp-hub-agent`, writes config + token, installs
