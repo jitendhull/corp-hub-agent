@@ -4,8 +4,9 @@ version = "0.1.0"
 description = "Push agent for Corp-Hub: sysinfo, network connections, logs"
 requires-python = ">=3.11"
 
-[project.dependencies]
-psutil = ">=5.9"
+dependencies = [
+    "psutil>=5.9",
+]
 
 [project.optional-dependencies]
 windows = ["pywin32>=306"]

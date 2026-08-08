@@ -7,7 +7,7 @@ from PyInstaller.utils.hooks import collect_submodules
 block_cipher = None
 
 a = Analysis(
-    ['../corp_hub_agent/agent.py'],
+    ['../corp_hub_agent/__main__.py'],
     pathex=['..'],
     binaries=[],
     datas=[],
