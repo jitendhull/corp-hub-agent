@@ -1,19 +1,72 @@
-# Build artifacts
+# ── Python ──────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+.eggs/
+.venv/
+venv/
+env/
+ENV/
+.venv-win/
+venv-win/
+
+# ── Build / Packaging (PyInstaller) ────────────────
 build/
 dist/
-*.egg-info/
+*.spec.bak
+*.manifest
 
-# Token (NEVER commit)
-*.token
+# ── Test / Coverage ────────────────────────────────────
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.tox/
+.nox/
+.mypy_cache/
+.ruff_cache/
+.pytype/
+
+# ── Runtime: tokens & secrets (NEVER commit) ───────
 token
+*.token
+*.key
+*.pem
+*.crt
+*.key.pem
+*.crt.pem
 
-# Python
-__pycache__/
-*.pyc
+# ── Runtime: local config (never commit real config) ─
+agent.conf
+*.conf.local
+conf/*.conf
+!conf/agent.conf.example
 
-# IDE
+# ── Logs ────────────────────────────────────────────────
+*.log
+logs/
+*.log.*
+
+# ── IDE / Editor ────────────────────────────────────────
 .idea/
 .vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
 
-# OS
+# ── OS ────────────────────────────────────────────────
 .DS_Store
+Thumbs.db
+Desktop.ini
+
+# ── Misc ────────────────────────────────────────────────
+*.bak
+*.tmp
+.cache/
