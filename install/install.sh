@@ -74,8 +74,7 @@ echo "==> Installed $BIN"
 
 # 4. Write config
 mkdir -p "$CONF_DIR"
-if [[ ! -f "$CONF_DIR/agent.conf" ]]; then
-  cat > "$CONF_DIR/agent.conf" <<EOF
+cat > "$CONF_DIR/agent.conf" <<EOF
 backend_url = "${BACKEND_URL}"
 listen_host = "0.0.0.0"
 listen_port = 9500
@@ -92,17 +91,9 @@ auth_log_path = "/var/log/auth.log"
 max_lines_per_push = 500
 max_backlog = 5000
 EOF
-  echo "==> Wrote $CONF_DIR/agent.conf"
-else
-  echo "==> $CONF_DIR/agent.conf exists, keeping"
-fi
+echo "==> Wrote $CONF_DIR/agent.conf (backend_url=${BACKEND_URL})"
 
-# 5. Register (mints token on first run)
-echo "==> Registering with backend"
-"$BIN" register --config "$CONF_DIR/agent.conf" || \
-  "$BIN" --config "$CONF_DIR/agent.conf" --register-once || true
-
-# 6. systemd unit
+# 5. systemd unit
 echo "==> Installing systemd unit"
 cp "$(dirname "$0")/corp-hub-agent.service" "$SERVICE_DIR/$SERVICE" 2>/dev/null || {
   cat > "$SERVICE_DIR/$SERVICE" <<'UNIT'
