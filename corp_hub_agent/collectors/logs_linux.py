@@ -30,11 +30,29 @@ class LogsLinuxCollector(Collector):
         self.auth_log_path = auth_log_path
         self.max_lines_per_push = max_lines_per_push
         self.max_backlog = max_backlog
+        self.pos_file_path = Path("/var/lib/corp-hub-agent/log_offsets.json")
         self._backlog: list[dict] = []
         self._journal = None
         self._journal_cursor = None
-        self._file_positions: dict[str, int] = {}
+        self._file_positions: dict[str, int] = self._load_offsets()
         self._init()
+
+    def _load_offsets(self) -> dict[str, int]:
+        try:
+            if self.pos_file_path.exists():
+                import json
+                return json.loads(self.pos_file_path.read_text())
+        except Exception as e:
+            log.warning("Could not load persistent log offsets: %s", e)
+        return {}
+
+    def _save_offsets(self) -> None:
+        try:
+            import json
+            self.pos_file_path.parent.mkdir(parents=True, exist_ok=True)
+            self.pos_file_path.write_text(json.dumps(self._file_positions))
+        except Exception as e:
+            log.warning("Could not save persistent log offsets: %s", e)
 
     def _init(self) -> None:
         if "journald" in self.sources:
@@ -110,6 +128,7 @@ class LogsLinuxCollector(Collector):
                     f.seek(start)
                     data = f.read(size - start)
                 self._file_positions[path] = size
+                self._save_offsets()
                 for raw_line in data.decode("utf-8", errors="replace").splitlines():
                     if not raw_line.strip():
                         continue

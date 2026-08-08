@@ -1,4 +1,4 @@
-"""HTTP push helper: POST JSON to backend with retry + backoff."""
+"""HTTP POST helper with exponential backoff retry for transient network errors."""
 from __future__ import annotations
 import logging
 import time
@@ -9,9 +9,6 @@ from .auth import auth_header
 
 log = logging.getLogger("corp_hub_agent")
 
-MAX_RETRIES = 3
-BACKOFF_SECONDS = [2, 5, 15]
-
 
 def push(
     backend_url: str,
@@ -19,32 +16,36 @@ def push(
     path: str,
     payload: dict,
     timeout: float = 10.0,
-) -> bool:
-    """POST payload to backend_path. Retries transient failures (5xx/network).
-
-    Returns True on success (2xx), False on terminal 4xx or retries exhausted.
-    """
+    max_retries: int = 3,
+) -> dict:
+    """POST payload to backend_url + path with X-Agent-Token header and retries."""
     url = backend_url.rstrip("/") + path
-    headers = {"Content-Type": "application/json", **auth_header(token)}
-    last_error = ""
+    headers = {
+        "Content-Type": "application/json",
+        **auth_header(token),
+    }
 
-    for attempt in range(MAX_RETRIES):
+    attempt = 0
+    backoff = 1.0
+
+    while True:
         try:
             resp = httpx.post(url, json=payload, headers=headers, timeout=timeout)
-            if resp.status_code < 300:
-                return True
-            if 400 <= resp.status_code < 500:
-                # Terminal — bad token, unknown host, invalid payload. Don't retry.
-                log.error("push %s: terminal %s %s", path, resp.status_code, resp.text[:200])
-                return False
-            last_error = f"HTTP {resp.status_code}: {resp.text[:120]}"
-        except httpx.HTTPError as e:
-            last_error = f"network error: {e}"
+            resp.raise_for_status()
+            return resp.json()
+        except (httpx.ConnectError, httpx.TimeoutException, httpx.HTTPStatusError) as e:
+            attempt += 1
+            status_code = getattr(getattr(e, "response", None), "status_code", None)
+            
+            # Non-transient errors (401, 403, 400) fail fast
+            if status_code in (400, 401, 403, 404):
+                log.error("Permanent HTTP error %s for %s: %s", status_code, path, e)
+                raise
 
-        if attempt < MAX_RETRIES - 1:
-            sleep_s = BACKOFF_SECONDS[min(attempt, len(BACKOFF_SECONDS) - 1)]
-            log.warning("push %s: %s — retry in %ss", path, last_error, sleep_s)
-            time.sleep(sleep_s)
+            if attempt >= max_retries:
+                log.error("Failed to push to %s after %d attempts: %s", path, max_retries, e)
+                raise
 
-    log.error("push %s: failed after %d retries: %s", path, MAX_RETRIES, last_error)
-    return False
+            log.warning("Push to %s failed (attempt %d/%d): %s. Retrying in %.1fs...", path, attempt, max_retries, e, backoff)
+            time.sleep(backoff)
+            backoff *= 2.0

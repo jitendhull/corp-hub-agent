@@ -8,7 +8,7 @@ import sys
 import time
 
 from .auth import read_token
-from .collectors import LogsCollector, MetricsCollector, NetworkCollector, SysinfoCollector
+from .collectors import LogsCollector, MetricsCollector, NetworkCollector, ProcessesCollector, SysinfoCollector
 from .config import Config, load_config
 from .push import push
 from .register import register
@@ -17,12 +17,14 @@ log = logging.getLogger("corp_hub_agent")
 
 INTERVAL_KEY = {
     "metrics": "network_interval_seconds",
+    "processes": "network_interval_seconds",
     "sysinfo": "sysinfo_interval_seconds",
     "network": "network_interval_seconds",
     "logs": "logs_interval_seconds",
 }
 POST_PATH = {
     "metrics": "/api/metrics/ingest",
+    "processes": "/api/agents/{host_id}/processes",
     "sysinfo": "/api/agents/{host_id}/sysinfo",
     "network": "/api/agents/{host_id}/network",
     "logs": "/api/agents/{host_id}/logs",
@@ -38,6 +40,7 @@ class Runner:
         version = __import__("corp_hub_agent").__version__
         self.collectors = {
             "metrics": MetricsCollector(agent_version=version),
+            "processes": ProcessesCollector(),
             "sysinfo": SysinfoCollector(agent_version=version),
             "network": NetworkCollector(),
             "logs": LogsCollector(
