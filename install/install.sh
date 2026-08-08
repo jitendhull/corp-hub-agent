@@ -5,7 +5,7 @@
 #     sudo bash -s -- --backend-url http://192.168.1.10:8000
 set -euo pipefail
 
-ORG="${ORG:-your-org}"   # GitHub org/user for release download
+ORG="jitendhull"   # GitHub org/user for release download
 REPO="corp-hub-agent"
 CONF_DIR="/etc/corp-hub-agent"
 BIN="/usr/local/bin/corp-hub-agent"
