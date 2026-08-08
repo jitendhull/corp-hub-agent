@@ -2,7 +2,7 @@
 
 Lightweight, cross-platform push agent for **Corp-Hub Corporate Monitoring System**.
 
-The agent runs as a background service on endpoints (Linux or Windows), collecting metrics, system specs, active network sockets, and system logs, then pushing them securely to your central Corp-Hub server.
+The agent runs as a background service on endpoints (Linux or Windows), collecting metrics, system specs, top process resource usage, active network sockets, and system logs, then pushing them securely to your central Corp-Hub server with automatic retry logic.
 
 ---
 
@@ -17,6 +17,7 @@ curl -fsSL https://raw.githubusercontent.com/jitendhull/corp-hub-agent/main/inst
 
 - Installs binary to `/usr/local/bin/corp-hub-agent-linux-x86_64`
 - Creates configuration at `/etc/corp-hub-agent/agent.conf`
+- Stores persistent log offsets at `/var/lib/corp-hub-agent/log_offsets.json`
 - Enables and starts `corp-hub-agent` systemd background service.
 
 ---
@@ -46,13 +47,15 @@ iex (iwr -UseBasicParsing https://raw.githubusercontent.com/jitendhull/corp-hub-
 
 ---
 
-## 🔒 Security & Data Privacy
+## 🔒 Security & Reliability
 
 1. **Token Authentication**: On first startup, the agent performs a one-time registration with the Corp-Hub backend to mint a unique 64-character token (`X-Agent-Token`).
-2. **Minimal Privileges**:
+2. **Exponential Backoff Retries**: Transient HTTP errors (502/503/timeouts) automatically retry with backoff so the agent stays resilient across server restarts.
+3. **Log Offset Persistence**: Keeps byte-position tracking (`log_offsets.json`) to prevent duplicate log pushes across agent restarts.
+4. **Minimal Privileges**:
    - On Linux, system logs (`/var/log/auth.log`, `journald`) are read strictly for security audit purposes.
-   - On Windows, standard Event Logs (`Application`, `System`, `Security`) are parsed via native Windows APIs (`wevtapi.dll`).
-3. **No External Dependencies**: Compiled into zero-dependency standalone binaries via PyInstaller.
+   - On Windows, standard Event Logs (`Application`, `System`, `Security`) are parsed natively via Windows API (`wevtapi.dll`).
+5. **No External Dependencies**: Compiled into zero-dependency standalone binaries via PyInstaller.
 
 ---
 
@@ -61,6 +64,7 @@ iex (iwr -UseBasicParsing https://raw.githubusercontent.com/jitendhull/corp-hub-
 | Collector | Intervals | Data Collected |
 |---|---|---|
 | **Metrics** | 60s | CPU %, Memory %, Disk %, System Uptime |
+| **Processes** | 60s | Top 15 processes sorted by CPU & Memory usage (PID, user, RSS bytes, status) |
 | **Network** | 60s | Active TCP sockets (ESTABLISHED, LISTEN), Local/Remote IPs & Ports, PIDs |
 | **Logs** | 60s | Tail of syslog, auth.log, journald (Linux) or Event Logs (Windows) |
 | **Sysinfo** | 300s (5m) | OS version, Kernel, Architecture, CPU model, total RAM/Disk |
@@ -126,16 +130,9 @@ Get-Content "C:\ProgramData\CorpHubAgent\agent.log" -Tail 50 -Wait
 git clone https://github.com/jitendhull/corp-hub-agent.git
 cd corp-hub-agent
 
-# Setup virtual environment
-python3 -m venv venv
-source venv/bin/activate  # On Windows: .\venv\Scripts\activate
-pip install -e .
+# Setup virtual environment & build via helper script
+./build.sh
 
-# Run locally
-corp-hub-agent --config /etc/corp-hub-agent/agent.conf
-
-# Build Standalone PyInstaller Binaries
-pip install pyinstaller
-pyinstaller packaging/linux.spec     # Output: dist/corp-hub-agent-linux-x86_64
-pyinstaller packaging/windows.spec   # Output: dist/corp-hub-agent-windows-x86_64.exe
+# Output binaries will be in dist/
+ls -lh dist/
 ```
