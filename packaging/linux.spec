@@ -1,10 +1,14 @@
 # PyInstaller spec for corp-hub-agent (Linux x86_64).
 # Build: pyinstaller packaging/linux.spec
-# Output: dist/corp-hub-agent
+# Output: dist/corp-hub-agent-linux-x86_64
 import sys
+import platform
 from PyInstaller.utils.hooks import collect_submodules
 
 block_cipher = None
+
+arch = platform.machine()
+asset_name = f"corp-hub-agent-linux-{arch}"
 
 a = Analysis(
     ['../corp_hub_agent/__main__.py'],
@@ -28,7 +32,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='corp-hub-agent',
+    name=asset_name,
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
